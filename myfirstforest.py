@@ -5,10 +5,15 @@ Revised: 15 April 2014
 please see packages.python.org/milk/randomforests.html for more
 
 """ 
+from __future__ import division
 import pandas as pd
 import numpy as np
 import csv as csv
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVR
+from sklearn.linear_model import SGDClassifier
 
 # Data cleanup
 # TRAIN DATA
@@ -41,7 +46,7 @@ train_df = train_df.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis
 
 
 # TEST DATA
-test_df = pd.read_csv('test.csv', header=0)        # Load the test file into a dataframe
+test_df = pd.read_csv('test_internal.csv', header=0)        # Load the test file into a dataframe
 
 # I need to do the same with the test data now, so that the columns are the same as the training data
 # I need to convert all strings to integer classifiers:
@@ -71,8 +76,11 @@ if len(test_df.Fare[ test_df.Fare.isnull() ]) > 0:
 
 # Collect the test data's PassengerIds before dropping it
 ids = test_df['PassengerId'].values
+
+results = test_df['Survived']
+
 # Remove the Name column, Cabin, Ticket, and Sex (since I copied and filled it to Gender)
-test_df = test_df.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1) 
+test_df = test_df.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Survived'], axis=1) 
 
 
 # The data is now ready to go. So lets fit to the train, then predict to the test!
@@ -82,12 +90,35 @@ test_data = test_df.values
 
 
 print 'Training...'
-forest = RandomForestClassifier(n_estimators=100)
+forest = RandomForestClassifier(max_depth=5)
 forest = forest.fit( train_data[0::,1::], train_data[0::,0] )
+
+tree = DecisionTreeRegressor()
+tree = tree.fit( train_data[0::,1::], train_data[0::,0] )
+
+ctree = DecisionTreeClassifier()
+ctree = ctree.fit( train_data[0::,1::], train_data[0::,0] )
+
+clf = SVR()
+clf = clf.fit(train_data[0::,1::], train_data[0::,0])
+
+clff = SGDClassifier(loss='hinge')
+clff = clff.fit(train_data[0::,1::], train_data[0::,0])
 
 print 'Predicting...'
 output = forest.predict(test_data).astype(int)
+t_output = tree.predict(test_data).astype(int)
+ct_output = ctree.predict(test_data).astype(int)
+c_output = clf.predict(test_data).astype(int)
+cc_output = clff.predict(test_data).astype(int)
 
+print 'Percent correct'
+
+print('Random forest % ' + str(np.sum(output == results) / len(output)))
+print('Tree % ' + str(np.sum(t_output == results) / len(output)))
+print('cTree % ' + str(np.sum(ct_output == results) / len(output)))
+print('SVR % ' + str(np.sum(c_output == results) / len(output)))
+print('SGD % ' + str(np.sum(cc_output == results) / len(output)))
 
 predictions_file = open("myfirstforest.csv", "wb")
 open_file_object = csv.writer(predictions_file)
