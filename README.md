@@ -4,3 +4,5 @@ So I recently found kaggle and depending on how this easier challenge goes, I ma
 
 moved most research to the ipython notebook cause its prettier and interactive. Also inline matplotlib graphs
 are great.
+
+To generate csv file, run the ipython notebook.
